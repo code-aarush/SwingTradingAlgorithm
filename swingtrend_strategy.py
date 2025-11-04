@@ -1,5 +1,6 @@
 """
 SwingTrend Strategy Script
+Author Information : ChatGPT
 Date: 2025-11-04
 
 This script implements the SwingTrend strategy described in the checklist:
@@ -11,6 +12,7 @@ This script implements the SwingTrend strategy described in the checklist:
 Usage:
     python3 swingtrend_strategy.py --data path/to/ohlcv.csv --capital 1000000 --risk 0.01
 
+Expected input format NSE OHLCV format as .csv file
 CSV columns required: Date, Open, High, Low, Close, Volume
 Date must be parsable by pandas.to_datetime
 
@@ -20,7 +22,7 @@ Outputs:
  - Writes an equity_curve.csv file with daily equity values
 
 Notes:
- - This is intended for manual verification and educational backtesting.
+ - This is program is intended for manual verification and educational backtesting.
  - Slippage, commissions, and margin effects are simplistic (configurable below).
  - Use heavy caution before trading live; backtest on each ticker individually.
 """
@@ -30,7 +32,7 @@ import pandas as pd
 import numpy as np
 from math import floor
 
-# ---------- Indicator implementations (vectorized) ----------
+# Indicator implementations including sma, ema, rsi, atr(stoploss), adx
 
 def sma(series, period):
     return series.rolling(period, min_periods=period).mean()
@@ -76,16 +78,17 @@ def adx(df, period=14):
     adx_series = dx.rolling(window=period, min_periods=1).mean()
     return adx_series, plus_di, minus_di
 
-# ---------- Strategy logic (indicator-only) ----------
+# Strategy logic by setting indicator conditions 
 
 def generate_indicators(df):
     df = df.copy()
-    df['SMA_44'] = sma(df['Close'], 44)
-    df['EMA_50'] = ema(df['Close'], 50)
-    df['RSI_14'] = rsi(df['Close'], 14)
-    df['ATR_14'] = atr(df, 14)
-    df['ADX_14'], df['+DI'], df['-DI'] = adx(df, 14)
+    df['SMA_44'] = sma(df['Close'], 44) # sma length 44 close
+    df['EMA_50'] = ema(df['Close'], 50) # ema length 50 
+    df['RSI_14'] = rsi(df['Close'], 14) # rsi length 14
+    df['ATR_14'] = atr(df, 14) # atr length 14
+    df['ADX_14'], df['+DI'], df['-DI'] = adx(df, 14) # adx length 14
     return df
+# Entry/Exit signal generation
 
 def generate_signals(df):
     """
@@ -125,7 +128,7 @@ def generate_signals(df):
 
     return df
 
-# ---------- Position sizing ----------
+# Long/Short position sizing 
 
 def position_size(capital, risk_pct, entry_price, atr, sl_multiplier=3):
     """
@@ -139,7 +142,7 @@ def position_size(capital, risk_pct, entry_price, atr, sl_multiplier=3):
     qty = floor(risk_money / stop_distance)
     return int(qty), stop_distance
 
-# ---------- Simple backtester (vectorized loop-based for trade execution) ----------
+# Simple backtester (vectorized loop-based for trade execution)
 
 def backtest(df, capital=1_000_000, risk_pct=0.01, sl_multiplier=3, tp_pct=0.10, trail_at_gain=0.05, trail_multiplier=2.0, commission_per_trade=0.0, slippage_pct=0.0005):
     """
@@ -152,7 +155,7 @@ def backtest(df, capital=1_000_000, risk_pct=0.01, sl_multiplier=3, tp_pct=0.10,
     equity = capital
     cash = capital
     position = None  # dict with keys: 'side','entry_price','qty','sl','tp','entry_index','max_favourable_price'
-    equity_curve = []
+    equity_curve = [] # used to write daily equity values into a csv file
 
     for i in range(len(df)-1):  # we reference i and i+1 for entry at next open
         row = df.iloc[i]
@@ -204,9 +207,9 @@ def backtest(df, capital=1_000_000, risk_pct=0.01, sl_multiplier=3, tp_pct=0.10,
                 # update max favourable
                 if next_row['High'] > position['max_favourable']:
                     position['max_favourable'] = next_row['High']
-                # trailing activation
+                # trailing stoploss activation
                 if (position['max_favourable'] / position['entry_price'] - 1) >= trail_at_gain:
-                    # compute new trailing stop
+                    # compute new trailing stoploss
                     new_stop = position['max_favourable'] - trail_multiplier * next_row['ATR_14']
                     if new_stop > position['sl']:
                         position['sl'] = new_stop
@@ -287,7 +290,7 @@ def backtest(df, capital=1_000_000, risk_pct=0.01, sl_multiplier=3, tp_pct=0.10,
     equity_df = pd.DataFrame(equity_curve).set_index('Date')
     return trades_df, equity_df
 
-# ---------- Utilities ----------
+# Utilities
 
 def perf_summary(trades_df, equity_df, capital):
     if trades_df.empty:
@@ -305,7 +308,7 @@ def perf_summary(trades_df, equity_df, capital):
     print(f"Win rate: {win_rate:.2f}%")
     print(f"Avg win: {avg_win:.2f}, Avg loss: {avg_loss:.2f}, Avg W/L ratio: {avg_rr:.2f}")
 
-# ---------- Main (CLI) ----------
+# Main (CLI)
 
 def main():
     parser = argparse.ArgumentParser(description='SwingTrend strategy backtester')
