@@ -63,7 +63,7 @@ def adx(df, period=14):
     down_move = -low.diff()
     plus_dm = ((up_move > down_move) & (up_move > 0)) * up_move
     minus_dm = ((down_move > up_move) & (down_move > 0)) * down_move
-    tr1 = high - low
+    tr1 = high - low # True Range
     tr2 = (high - close.shift()).abs()
     tr3 = (low - close.shift()).abs()
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
