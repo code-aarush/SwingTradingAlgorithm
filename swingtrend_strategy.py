@@ -1,31 +1,3 @@
-"""
-SwingTrend Strategy Script
-Author Information : ChatGPT
-Date: 2025-11-04
-
-This script implements the SwingTrend strategy described in the checklist:
-- Indicator-only entries & exits (SMA-44, EMA-50, RSI-14, ADX-14, ATR-14)
-- No price-action / volume rules included
-- Volatility-based position sizing (risk per trade = 1% default)
-- Simple vectorized backtester that accepts OHLCV CSV input
-
-Usage:
-    python3 swingtrend_strategy.py --data path/to/ohlcv.csv --capital 1000000 --risk 0.01
-
-Expected input format NSE OHLCV format as .csv file
-CSV columns required: Date, Open, High, Low, Close, Volume
-Date must be parsable by pandas.to_datetime
-
-Outputs:
- - Prints a performance summary to stdout
- - Writes a trades.csv file with trade-by-trade details
- - Writes an equity_curve.csv file with daily equity values
-
-Notes:
- - This is program is intended for manual verification and educational backtesting.
- - Slippage, commissions, and margin effects are simplistic (configurable below).
- - Use heavy caution before trading live; backtest on each ticker individually.
-"""
 
 import argparse
 import pandas as pd
